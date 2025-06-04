@@ -3,7 +3,6 @@
 // Import required modules
 const express = require('express');
 const bodyParser = require('body-parser');
-const { v4: uuidv4 } = require('uuid');
 const dotenv = require('dotenv');
 
 // Load environment variables
@@ -24,22 +23,6 @@ const PORT = process.env.PORT || 3000;
 app.use(bodyParser.json());
 app.use(logger);
 
-// In-memory products data store
-let products = [
-    {
-        id: uuidv4(),
-        name: "Sample Product 1",
-        price: 29.99,
-        description: "This is a sample product"
-    },
-    {
-        id: uuidv4(),
-        name: "Sample Product 2",
-        price: 39.99,
-        description: "This is another sample product"
-    }
-];
-
 // Root route
 app.get('/', (req, res) => {
   res.json({ 
@@ -54,61 +37,6 @@ app.get('/', (req, res) => {
 
 // API routes with authentication
 app.use('/api/products', authenticateApiKey, productsRouter);
-
-// GET all products
-app.get('/api/products', (req, res) => {
-    res.json(products);
-});
-
-// GET single product
-app.get('/api/products/:id', (req, res) => {
-    const product = products.find(p => p.id === req.params.id);
-    if (!product) {
-        return res.status(404).json({ message: "Product not found" });
-    }
-    res.json(product);
-});
-
-// POST new product
-app.post('/api/products', (req, res) => {
-    const newProduct = {
-        id: uuidv4(),
-        name: req.body.name,
-        price: req.body.price,
-        description: req.body.description
-    };
-    products.push(newProduct);
-    res.status(201).json(newProduct);
-});
-
-// PUT update product
-app.put('/api/products/:id', (req, res) => {
-    const index = products.findIndex(p => p.id === req.params.id);
-    if (index === -1) {
-        return res.status(404).json({ message: "Product not found" });
-    }
-    products[index] = {
-        ...products[index],
-        ...req.body,
-        id: req.params.id // preserve the original id
-    };
-    res.json(products[index]);
-});
-
-// DELETE product
-app.delete('/api/products/:id', (req, res) => {
-    const index = products.findIndex(p => p.id === req.params.id);
-    if (index === -1) {
-        return res.status(404).json({ message: "Product not found" });
-    }
-    products = products.filter(p => p.id !== req.params.id);
-    res.status(204).send();
-});
-
-// TODO: Implement custom middleware for:
-// - Request logging
-// - Authentication
-// - Error handling
 
 // Error handling middleware
 app.use((err, req, res, next) => {
