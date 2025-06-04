@@ -4,6 +4,17 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const { v4: uuidv4 } = require('uuid');
+const dotenv = require('dotenv');
+
+// Load environment variables
+dotenv.config();
+
+// Import middleware
+const logger = require('./src/middleware/logger');
+const authenticateApiKey = require('./src/middleware/auth');
+
+// Import routes
+const productsRouter = require('./src/routes/products');
 
 // Initialize Express app
 const app = express();
@@ -11,6 +22,7 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware setup
 app.use(bodyParser.json());
+app.use(logger);
 
 // Sample in-memory products database
 let products = [
@@ -42,8 +54,18 @@ let products = [
 
 // Root route
 app.get('/', (req, res) => {
-  res.send('Welcome to the Product API! Go to /api/products to see all products.');
+  res.json({ 
+    message: 'Welcome to the Products API',
+    endpoints: {
+      products: '/api/products',
+      search: '/api/products/search',
+      stats: '/api/products/stats'
+    }
+  });
 });
+
+// API routes with authentication
+app.use('/api/products', authenticateApiKey, productsRouter);
 
 // TODO: Implement the following routes:
 // GET /api/products - Get all products
@@ -62,9 +84,20 @@ app.get('/api/products', (req, res) => {
 // - Authentication
 // - Error handling
 
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: 'Something went wrong!' });
+});
+
+// Handle 404 errors
+app.use((req, res) => {
+  res.status(404).json({ error: 'Route not found' });
+});
+
 // Start the server
 app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+  console.log(`Server is running on port ${PORT}`);
 });
 
 // Export the app for testing purposes
